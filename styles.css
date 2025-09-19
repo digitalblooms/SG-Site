@@ -21,34 +21,45 @@ a{color:inherit}
   max-width:100%; /* full bleed */
   display:grid;
   grid-template-rows:auto auto 1fr;
-  gap:.75rem;
-  padding:0.75rem;
+  gap:1rem;
+  padding:1rem;
 }
 
 /* Banner */
 .banner{
-  display:flex;align-items:center;gap:1rem;justify-content:space-between;
-  background:linear-gradient(180deg,#0f172a,#0b1220);
-  padding:.75rem 1rem;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);
+  padding: 1.25rem 1.5rem;            /* was .75rem 1rem */
+  gap: 1.25rem;                        /* more breathing room */
 }
+
 .brand{display:flex;align-items:center;gap:.75rem}
 .brand h1{font-size:1.1rem;margin:0;letter-spacing:.4px}
 .badge{display:inline-flex;gap:.5rem;align-items:center;padding:.25rem .6rem;border-radius:999px;background:#111827;border:1px solid #1f2937;font-size:.85rem}
 .badge small{color:var(--muted)}
 
 /* Weather */
-.weather{display:flex;align-items:center;gap:.6rem}
-.weather .temp{font-weight:700}
-.weather .desc{color:var(--muted)}
+.weather{
+  gap: 1rem;                           /* was .6rem */
+}
+#weather-icon{                         /* emoji/icon size */
+  font-size: 2rem;
+  line-height: 1;
+}
+.weather .temp{
+  font-size: 2.25rem;                  /* bigger number */
+  font-weight: 800;
+}
+.weather .desc{
+  font-size: 1.05rem;                  /* slightly larger subtitle */
+}
 
 .weather-hours{
-  display:flex; gap:.5rem; margin-left:.5rem; padding:0; list-style:none; flex-wrap:wrap;
+  display:flex; gap:.75rem; margin-left:1rem; padding:0; list-style:none; flex-wrap:wrap;
 }
 .weather-hours li{
   display:flex; flex-direction:column; align-items:center; /* stack */
-  gap:.25rem; padding:.35rem .5rem;
+  gap:.25rem; padding:.5rem .65rem;
   border:1px solid #1f2937; background:#0f172a;
-  border-radius:10px; font-size:.9rem; color:var(--muted);
+  border-radius:10px; font-size:1.5rem; color:var(--muted);
 }
 .weather-hours .h{
   font-variant-numeric:tabular-nums;
@@ -71,9 +82,14 @@ a{color:inherit}
 .contact-meta{display:flex;flex-direction:column}
 .contact-meta .name{font-weight:700}
 .contact-meta .role{color:var(--muted);font-size:.9rem}
-.contact-actions{margin-left:auto;display:flex;gap:.5rem}
+.contact-actions{margin-left:auto;display:flex;gap:.5rem;align-items: center;}
 .btn{border:1px solid #334155;background:#0f172a;color:var(--text);border-radius:12px;padding:.5rem .8rem;cursor:pointer}
 .btn:focus, .btn:hover{outline:none;box-shadow:0 0 0 4px var(--ring)}
+
+.phone-label { font-weight:700; }
+@media (max-width: 600px){
+  .contact-actions { flex-wrap: wrap; }
+}
 
 /* --- Slideshow (fills remaining space) --- */
 .slideshow{
@@ -81,7 +97,7 @@ a{color:inherit}
   width:100%;
   height:100%;
   background:#000; /* pleasant letterboxing for non-16:9 */
-  border-radius:18px;
+  border-radius:16px;
   border:1px solid #1f2937;
   overflow:hidden;
   box-shadow:0 12px 30px rgba(0,0,0,.35);

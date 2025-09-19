@@ -10,13 +10,6 @@
 <body>
   <div class="container">
     <section class="banner" aria-label="Site banner">
-      <div class="brand">
-        <div class="badge" title="Today in Europe/London">
-          <span>📅</span>
-          <small id="today-label"></small>
-        </div>
-        <h1>Team Hub</h1>
-      </div>
       <div class="weather" id="weather" aria-live="polite">
         <span id="weather-icon" aria-hidden="true">🌡️</span>
         <span class="temp" id="weather-temp">--°C</span>
@@ -33,7 +26,8 @@
         <span class="role" id="contact-role">Duty Contact</span>
       </div>
       <div class="contact-actions">
-        <a class="btn" id="contact-phone" href="tel:" aria-label="Call contact">Call</a>
+        <span class="phone-label" id="contact-phone-text" aria-live="polite">DSL Hotline:</span>
+        <a class="btn" id="contact-phone" href="tel:" aria-label="Call DSL Hotline">Call</a>
       </div>
     </section>
 

@@ -5,22 +5,25 @@
       "slug": "peter",
       "name": "Peter Marment",
       "phone": "+44 7700 174021",
-      "role": "Designated Safeguarding Lead",
-      "photo": "assets/images/peter.jpg"
+      "role": "Today's Designated Safeguarding Lead",
+      "photo": "assets/images/peter.jpg",
+      "days": ["Mon", "Tue", "Wed", "Thu", "Fri"] 
     },
     {
       "slug": "sam",
       "name": "Sam Masterson",
       "phone": "+44 7700 174021",
-      "role": "Designated Safeguarding Lead",
-      "photo": "assets/images/sam.jpg"
+      "role": "Today's Designated Safeguarding Lead",
+      "photo": "assets/images/sam.jpg",
+      "days": ["Sat"] 
     },
     {
       "slug": "nessa",
       "name": "Nessa Wheeler",
       "phone": "+44 7700 174021",
-      "role": "Designated Safeguarding Lead",
-      "photo": "assets/images/nessa.jpg"
+      "role": "Today's Designated Safeguarding Lead",
+      "photo": "assets/images/nessa.jpg",
+      "days": ["Sun"] 
     }
   ]
 }
