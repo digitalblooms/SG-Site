@@ -1,17 +1,17 @@
 {
   "pages": [
     {
-      "src": "assets/images/page-1.svg",
+      "src": "assets/images/page-1.png",
       "title": "Canva Page 1",
       "alt": "Placeholder for Canva page 1"
     },
     {
-      "src": "assets/images/page-2.svg",
+      "src": "assets/images/page-2.png",
       "title": "Canva Page 2",
       "alt": "Placeholder for Canva page 2"
     },
     {
-      "src": "assets/images/page-3.svg",
+      "src": "assets/images/page-3.png",
       "title": "Canva Page 3",
       "alt": "Placeholder for Canva page 3"
     }
