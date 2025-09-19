@@ -1,0 +1,19 @@
+{
+  "pages": [
+    {
+      "src": "assets/images/page-1.svg",
+      "title": "Canva Page 1",
+      "alt": "Placeholder for Canva page 1"
+    },
+    {
+      "src": "assets/images/page-2.svg",
+      "title": "Canva Page 2",
+      "alt": "Placeholder for Canva page 2"
+    },
+    {
+      "src": "assets/images/page-3.svg",
+      "title": "Canva Page 3",
+      "alt": "Placeholder for Canva page 3"
+    }
+  ]
+}

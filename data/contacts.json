@@ -1,0 +1,26 @@
+{
+  "assignments": {},
+  "roster": [
+    {
+      "slug": "alex",
+      "name": "Alex Lane",
+      "phone": "+44 7700 900001",
+      "role": "Duty Contact",
+      "photo": "assets/images/alex.svg"
+    },
+    {
+      "slug": "bea",
+      "name": "Bea Evans",
+      "phone": "+44 7700 900002",
+      "role": "Duty Contact",
+      "photo": "assets/images/bea.svg"
+    },
+    {
+      "slug": "cory",
+      "name": "Cory O\u2019Neil",
+      "phone": "+44 7700 900003",
+      "role": "Duty Contact",
+      "photo": "assets/images/cory.svg"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Canva Pages + Rotating Contact</title>
+  <link rel="stylesheet" href="styles.css">
+  <meta name="color-scheme" content="dark light">
+</head>
+<body>
+  <div class="container">
+    <section class="banner" aria-label="Site banner">
+      <div class="brand">
+        <div class="badge" title="Today in Europe/London">
+          <span>📅</span>
+          <small id="today-label"></small>
+        </div>
+        <h1>Team Hub</h1>
+      </div>
+      <div class="weather" id="weather" aria-live="polite">
+        <span id="weather-icon" aria-hidden="true">🌡️</span>
+        <span class="temp" id="weather-temp">--°C</span>
+        <span class="desc" id="weather-desc">Loading...</span>
+        <span class="desc" id="weather-location"></span>
+      </div>
+    </section>
+
+    <section class="contact-card" id="contact-card" aria-label="Contact of the day">
+      <img id="contact-photo" src="assets/images/alex.svg" alt="Contact headshot" width="64" height="64" loading="eager">
+      <div class="contact-meta">
+        <span class="name" id="contact-name">—</span>
+        <span class="role" id="contact-role">Duty Contact</span>
+      </div>
+      <div class="contact-actions">
+        <a class="btn" id="contact-phone" href="tel:" aria-label="Call contact">Call</a>
+      </div>
+    </section>
+
+    <section aria-label="Canva pages">
+      <div class="grid" id="pages-grid"></div>
+    </section>
+
+    <p class="footer-note">Replace the SVGs in <code>assets/images/</code> with your Canva exports.</p>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+    <button class="btn close" aria-label="Close">✕</button>
+    <img id="lightbox-img" alt="Full-size page">
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Set today's date in banner (Europe/London)
+    (function(){
+      const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+      document.getElementById('today-label').textContent = fmt.format(new Date());
+    })();
+  </script>
+</body>
+</html>
