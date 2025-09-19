@@ -143,6 +143,135 @@ function weatherCodeToText(code){
   return map[code] || {label:'Weather', emoji:'🌡️'};
 }
 
+async function loadWarnings(){
+  const banner = document.querySelector('.banner');
+  const listEl = document.getElementById('warnings-list');
+  const emptyEl = document.querySelector('.warnings-empty');
+
+  // Helper: set banner border by max severity
+  const applyBorder = (maxSeverity) => {
+    banner.classList.remove('warn-yellow','warn-red');
+    if (!maxSeverity) return;
+    if (maxSeverity === 'red') banner.classList.add('warn-red');
+    else if (maxSeverity === 'amber' || maxSeverity === 'yellow' || maxSeverity === 'orange')
+      banner.classList.add('warn-yellow'); // treat amber/orange as yellow-style
+  };
+
+  // Get user coords (reuse geolocation; match loadWeather fallback)
+  let coords;
+  try{
+    coords = await new Promise((resolve, reject)=>{
+      if(!navigator.geolocation) return reject(new Error('No geolocation'));
+      const opts = { enableHighAccuracy:false, timeout:5000, maximumAge: 10*60*1000 };
+      navigator.geolocation.getCurrentPosition(p=>resolve(p.coords), reject, opts);
+    });
+  }catch(e){
+    coords = { latitude: 51.5074, longitude: -0.1278 }; // London fallback
+  }
+
+  // Try Met Office DataHub if api key present
+  const moKey = window.METOFFICE_API_KEY; // set in a small inline script if you have one
+  let warnings = [];
+  let source = 'fallback';
+
+  if (moKey){
+    try{
+      // NOTE: Endpoint may differ depending on your DataHub plan/route.
+      // This uses a common pattern for active weather alerts in CAP/GeoJSON.
+      const moUrl = `https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/v0/alerts/active?` +
+                    `excludeLegacy=true&` +
+                    `geocode=POINT(${coords.longitude}%20${coords.latitude})`;
+      const res = await fetch(moUrl, {
+        headers: {
+          'accept': 'application/json',
+          'x-ibm-client-id': moKey
+        }
+      });
+      if (res.ok){
+        const data = await res.json();
+        // Normalise to a simple array
+        warnings = (data.features || []).map(f => {
+          const props = f.properties || {};
+          return {
+            severity: (props.severity || '').toLowerCase(), // 'yellow' | 'amber' | 'red'
+            event: props.event || props.headline || 'Weather warning',
+            onset: props.onset || props.effective || null,
+            expires: props.expires || null,
+            areas: (props.areaDesc || props.description || '').toString()
+          };
+        });
+        source = 'metoffice';
+      }
+    }catch(e){
+      // fall through to fallback
+    }
+  }
+
+  // Fallback: Open-Meteo warnings (MeteoAlarm Europe) – no API key
+  if (warnings.length === 0){
+    try{
+      const tz = 'Europe%2FLondon';
+      const url = `https://api.open-meteo.com/v1/warnings?latitude=${coords.latitude}&longitude=${coords.longitude}&timezone=${tz}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const arr = Array.isArray(data.warnings) ? data.warnings : [];
+      warnings = arr.map(w => ({
+        severity: (w.severity || w.color || '').toLowerCase(), // 'yellow' | 'orange' | 'red', etc.
+        event: w.event || w.type || 'Weather warning',
+        onset: w.onset || w.start || null,
+        expires: w.expires || w.end || null,
+        areas: (w.region || w.sender || w.source || '') + (w.description ? ` – ${w.description}` : '')
+      }));
+      source = 'openmeteo';
+    }catch(e){
+      // nothing
+    }
+  }
+
+  // Render
+  if (!warnings.length){
+    listEl.hidden = true;
+    emptyEl.hidden = false;
+    applyBorder(null);
+    return;
+  }
+
+  // Pick highest severity for border
+  const rank = { red:3, amber:2, orange:2, yellow:1 };
+  const max = warnings.reduce((acc, w)=>{
+    const s = (w.severity||'').toLowerCase();
+    return (rank[s]||0) > (rank[acc]||0) ? s : acc;
+  }, null);
+  applyBorder(max);
+
+  // Build list
+  listEl.innerHTML = '';
+  warnings.slice(0,5).forEach(w => {
+    const sev = (w.severity||'yellow').toLowerCase();
+    const sevClass = sev === 'red' ? 'warning-red' : (sev === 'amber' || sev === 'orange') ? 'warning-amber' : 'warning-yellow';
+    const li = document.createElement('li');
+    li.className = `warning-item ${sevClass}`;
+    const icon = sev === 'red' ? '🛑' : (sev === 'amber' || sev === 'orange') ? '⚠️' : '⚠️';
+    const when = [
+      w.onset ? new Date(w.onset).toLocaleString('en-GB', { timeZone:'Europe/London' }) : null,
+      w.expires ? new Date(w.expires).toLocaleString('en-GB', { timeZone:'Europe/London' }) : null
+    ].filter(Boolean);
+
+    li.innerHTML = `
+      <div class="icon" aria-hidden="true">${icon}</div>
+      <div class="meta">
+        <div class="title">${w.event}</div>
+        ${when.length ? `<div class="when">${when.join(' → ')}</div>` : ``}
+        ${w.areas ? `<div class="areas">${w.areas}</div>` : ``}
+      </div>
+    `;
+    listEl.appendChild(li);
+  });
+
+  emptyEl.hidden = true;
+  listEl.hidden = false;
+}
+
 function londonNow() {
   // Get a Date representing current time in Europe/London (DST-safe)
   const now = new Date();
@@ -326,6 +455,7 @@ class Slideshow{
 document.addEventListener('DOMContentLoaded', async ()=>{
   loadWeather();
   loadContact();
+  loadWarnings();
   const show = new Slideshow({ duration: 30000 }); // 30 seconds
   await show.init();
   // Optional: keyboard controls if connected to a keyboard
