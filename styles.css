@@ -41,6 +41,26 @@ a{color:inherit}
 .weather .temp{font-weight:700}
 .weather .desc{color:var(--muted)}
 
+.weather-hours{
+  display:flex; gap:.5rem; margin-left:.5rem; padding:0; list-style:none; flex-wrap:wrap;
+}
+.weather-hours li{
+  display:flex; flex-direction:column; align-items:center; /* stack */
+  gap:.25rem; padding:.35rem .5rem;
+  border:1px solid #1f2937; background:#0f172a;
+  border-radius:10px; font-size:.9rem; color:var(--muted);
+}
+.weather-hours .h{
+  font-variant-numeric:tabular-nums;
+  font-weight:600; color:var(--text);
+  line-height:1;   /* compact time line */
+}
+.weather-hours .wx{
+  display:inline-flex; align-items:center; gap:.4rem; /* icon + temp on one row */
+}
+.weather-hours .t{ font-variant-numeric:tabular-nums; font-weight:600; color:var(--text) }
+
+
 /* Contact card */
 .contact-card{
   display:flex;align-items:center;gap:1rem;

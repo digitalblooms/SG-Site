@@ -2,25 +2,25 @@
   "assignments": {},
   "roster": [
     {
-      "slug": "alex",
-      "name": "Alex Lane",
-      "phone": "+44 7700 900001",
-      "role": "Duty Contact",
-      "photo": "assets/images/alex.svg"
+      "slug": "peter",
+      "name": "Peter Marment",
+      "phone": "+44 7700 174021",
+      "role": "Designated Safeguarding Lead",
+      "photo": "assets/images/peter.jpg"
     },
     {
-      "slug": "bea",
-      "name": "Bea Evans",
-      "phone": "+44 7700 900002",
-      "role": "Duty Contact",
-      "photo": "assets/images/bea.svg"
+      "slug": "sam",
+      "name": "Sam Masterson",
+      "phone": "+44 7700 174021",
+      "role": "Designated Safeguarding Lead",
+      "photo": "assets/images/sam.jpg"
     },
     {
-      "slug": "cory",
-      "name": "Cory O\u2019Neil",
-      "phone": "+44 7700 900003",
-      "role": "Duty Contact",
-      "photo": "assets/images/cory.svg"
+      "slug": "nessa",
+      "name": "Nessa Wheeler",
+      "phone": "+44 7700 174021",
+      "role": "Designated Safeguarding Lead",
+      "photo": "assets/images/nessa.jpg"
     }
   ]
 }

@@ -20,11 +20,25 @@ function dayOfYearLondon(){
 }
 
 // Weather widget using Open-Meteo (no API key)
+// Format "HH:00" label for Europe/London local time
+function formatHourLondon(iso) {
+  const d = new Date(iso);
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).format(d); // → "13:00"
+}
+
+// Weather widget using Open-Meteo (current + next 5 hours for today)
 async function loadWeather(){
   const locationEl = document.querySelector('#weather-location');
   const tempEl = document.querySelector('#weather-temp');
   const descEl = document.querySelector('#weather-desc');
   const iconEl = document.querySelector('#weather-icon');
+  const hoursEl = document.querySelector('#weather-hours');
+
   let coords;
   try{
     coords = await new Promise((resolve, reject)=>{
@@ -35,21 +49,71 @@ async function loadWeather(){
   }catch(e){
     coords = { latitude: 51.5074, longitude: -0.1278 }; // London fallback
   }
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current=temperature_2m,is_day,weather_code&timezone=Europe%2FLondon`;
+
+  const url = `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${coords.latitude}&longitude=${coords.longitude}` +
+    `&current=temperature_2m,is_day,weather_code` +
+    `&hourly=temperature_2m,weather_code` +
+    `&timezone=Europe%2FLondon`;
+
   try{
     const res = await fetch(url);
     const data = await res.json();
-    const code = data.current.weather_code;
-    const temp = Math.round(data.current.temperature_2m);
-    tempEl.textContent = `${temp}°C`;
-    const { label, emoji } = weatherCodeToText(code);
+
+    // ---- Current conditions (existing UI) ----
+    const codeNow = data.current.weather_code;
+    const tempNow = Math.round(data.current.temperature_2m);
+    tempEl.textContent = `${tempNow}°C`;
+    const { label, emoji } = weatherCodeToText(codeNow);
     descEl.textContent = label;
     iconEl.textContent = emoji;
-    locationEl.textContent = 'Local weather';
+    locationEl.textContent = '';
+
+    // ---- Next 5 hours (today only, Europe/London) ----
+    if (hoursEl && data.hourly && Array.isArray(data.hourly.time)){
+      const now = new Date();
+      const todayISO = todayInLondonISO(); // you already have this helper
+      const { time, temperature_2m, weather_code } = data.hourly;
+
+      // Build tuples and filter to: time >= now AND same London-calendar day
+      const items = time.map((t, i) => ({
+        tISO: t,
+        temp: Math.round(temperature_2m[i]),
+        code: weather_code[i]
+      }))
+      .filter(obj => {
+        const d = new Date(obj.tISO);
+        // "today" check in Europe/London using your helper
+        const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year:'numeric', month:'2-digit', day:'2-digit' });
+        const dISO = fmt.format(d);
+        return (new Date(obj.tISO) >= now) && (dISO === todayISO);
+      })
+      .slice(0, 8);
+
+      // Render
+      for (const it of items){
+        const { label, emoji } = weatherCodeToText(it.code);
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span class="h">${formatHourLondon(it.tISO)}</span>
+          <span class="wx" title="${label}">
+            <span aria-hidden="true">${emoji}</span>
+            <span class="t">${it.temp}°</span>
+          </span>
+        `;
+        hoursEl.appendChild(li);
+      }
+
+      // Fallback if we crossed midnight and have <5 items left for "today"
+      if (hoursEl.children.length === 0){
+        hoursEl.innerHTML = '<li><span>Hourly forecast unavailable</span></li>';
+      }
+    }
   }catch(e){
     tempEl.textContent = '--';
     descEl.textContent = 'Unavailable';
     iconEl.textContent = '⌛';
+    if (hoursEl){ hoursEl.innerHTML = '<li><span>Forecast unavailable</span></li>'; }
   }
 }
 function weatherCodeToText(code){
