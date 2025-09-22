@@ -39,6 +39,8 @@ async function loadWeather(){
   const iconEl = document.querySelector('#weather-icon');
   const hoursEl = document.querySelector('#weather-hours');
 
+  if (hoursEl) hoursEl.innerHTML = '';
+
   let coords;
   try{
     coords = await new Promise((resolve, reject)=>{
@@ -148,87 +150,69 @@ async function loadWarnings(){
   const listEl = document.getElementById('warnings-list');
   const emptyEl = document.querySelector('.warnings-empty');
 
-  // Helper: set banner border by max severity
   const applyBorder = (maxSeverity) => {
     banner.classList.remove('warn-yellow','warn-red');
     if (!maxSeverity) return;
     if (maxSeverity === 'red') banner.classList.add('warn-red');
-    else if (maxSeverity === 'amber' || maxSeverity === 'yellow' || maxSeverity === 'orange')
-      banner.classList.add('warn-yellow'); // treat amber/orange as yellow-style
+    else if (['amber','orange','yellow'].includes(maxSeverity)) banner.classList.add('warn-yellow');
   };
 
-  // Get user coords (reuse geolocation; match loadWeather fallback)
-  let coords;
+  // --- Fetch Meteoalarm UK Atom feed ---
+  // Docs/listing of country feeds: feeds.meteoalarm.org (see citations)
+  const FEED_URL = 'https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-united-kingdom';
+
+  let xml;
   try{
-    coords = await new Promise((resolve, reject)=>{
-      if(!navigator.geolocation) return reject(new Error('No geolocation'));
-      const opts = { enableHighAccuracy:false, timeout:5000, maximumAge: 10*60*1000 };
-      navigator.geolocation.getCurrentPosition(p=>resolve(p.coords), reject, opts);
-    });
+    const res = await fetch(FEED_URL, { cache: 'no-store' }); // avoid stale entries on the TV
+    const txt = await res.text();
+    xml = new DOMParser().parseFromString(txt, 'application/xml');
   }catch(e){
-    coords = { latitude: 51.5074, longitude: -0.1278 }; // London fallback
+    // Render "no warnings" fallback
+    if (listEl) listEl.hidden = true;
+    if (emptyEl) emptyEl.hidden = false;
+    applyBorder(null);
+    return;
   }
 
-  // Try Met Office DataHub if api key present
-  const moKey = window.METOFFICE_API_KEY; // set in a small inline script if you have one
-  let warnings = [];
-  let source = 'fallback';
+  // --- Parse Atom entries ---
+  const entries = Array.from(xml.querySelectorAll('entry, item')); // Atom(entry) or RSS(item)
+  const toLower = (s)=> (s||'').toLowerCase();
 
-  if (moKey){
-    try{
-      // NOTE: Endpoint may differ depending on your DataHub plan/route.
-      // This uses a common pattern for active weather alerts in CAP/GeoJSON.
-      const moUrl = `https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/v0/alerts/active?` +
-                    `excludeLegacy=true&` +
-                    `geocode=POINT(${coords.longitude}%20${coords.latitude})`;
-      const res = await fetch(moUrl, {
-        headers: {
-          'accept': 'application/json',
-          'x-ibm-client-id': moKey
-        }
-      });
-      if (res.ok){
-        const data = await res.json();
-        // Normalise to a simple array
-        warnings = (data.features || []).map(f => {
-          const props = f.properties || {};
-          return {
-            severity: (props.severity || '').toLowerCase(), // 'yellow' | 'amber' | 'red'
-            event: props.event || props.headline || 'Weather warning',
-            onset: props.onset || props.effective || null,
-            expires: props.expires || null,
-            areas: (props.areaDesc || props.description || '').toString()
-          };
-        });
-        source = 'metoffice';
-      }
-    }catch(e){
-      // fall through to fallback
-    }
-  }
+  const parseSeverity = (title, summary, node) => {
+    // Try CAP extensions if present
+    const capColor = node.querySelector('cap\\:color, color');
+    const capSeverity = node.querySelector('cap\\:severity, severity');
+    const guess = toLower(
+      (capColor && capColor.textContent) ||
+      (capSeverity && capSeverity.textContent) ||
+      title || summary || ''
+    );
+    if (guess.includes('red')) return 'red';
+    if (guess.includes('amber') || guess.includes('orange')) return 'amber';
+    if (guess.includes('yellow')) return 'yellow';
+    return 'yellow'; // default style
+  };
 
-  // Fallback: Open-Meteo warnings (MeteoAlarm Europe) – no API key
-  if (warnings.length === 0){
-    try{
-      const tz = 'Europe%2FLondon';
-      const url = `https://api.open-meteo.com/v1/warnings?latitude=${coords.latitude}&longitude=${coords.longitude}&timezone=${tz}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const arr = Array.isArray(data.warnings) ? data.warnings : [];
-      warnings = arr.map(w => ({
-        severity: (w.severity || w.color || '').toLowerCase(), // 'yellow' | 'orange' | 'red', etc.
-        event: w.event || w.type || 'Weather warning',
-        onset: w.onset || w.start || null,
-        expires: w.expires || w.end || null,
-        areas: (w.region || w.sender || w.source || '') + (w.description ? ` – ${w.description}` : '')
-      }));
-      source = 'openmeteo';
-    }catch(e){
-      // nothing
-    }
-  }
+  const warnings = entries.map(n => {
+    const title = (n.querySelector('title')?.textContent || '').trim();
+    const summary = (n.querySelector('summary, description')?.textContent || '').trim();
+    const updated = n.querySelector('updated, pubDate')?.textContent || '';
+    const dt = updated ? new Date(updated) : null;
 
-  // Render
+    // Some feeds carry CAP dates in <cap:effective> / <cap:onset> / <cap:expires>
+    const onset = n.querySelector('cap\\:effective, cap\\:onset, effective, onset')?.textContent || updated || '';
+    const expires = n.querySelector('cap\\:expires, expires')?.textContent || '';
+
+    const severity = parseSeverity(title, summary, n);
+    return {
+      severity,
+      event: title || 'Weather warning',
+      onset: onset || null,
+      expires: expires || null,
+      areas: summary
+    };
+  });
+
   if (!warnings.length){
     listEl.hidden = true;
     emptyEl.hidden = false;
@@ -236,27 +220,29 @@ async function loadWarnings(){
     return;
   }
 
-  // Pick highest severity for border
+  // --- Style banner by highest severity present ---
   const rank = { red:3, amber:2, orange:2, yellow:1 };
-  const max = warnings.reduce((acc, w)=>{
-    const s = (w.severity||'').toLowerCase();
-    return (rank[s]||0) > (rank[acc]||0) ? s : acc;
-  }, null);
+  const max = warnings.reduce((acc, w) =>
+    (rank[w.severity]||0) > (rank[acc]||0) ? w.severity : acc
+  , null);
   applyBorder(max);
 
-  // Build list
+  // --- Render up to 5 warnings ---
   listEl.innerHTML = '';
   warnings.slice(0,5).forEach(w => {
-    const sev = (w.severity||'yellow').toLowerCase();
-    const sevClass = sev === 'red' ? 'warning-red' : (sev === 'amber' || sev === 'orange') ? 'warning-amber' : 'warning-yellow';
-    const li = document.createElement('li');
-    li.className = `warning-item ${sevClass}`;
-    const icon = sev === 'red' ? '🛑' : (sev === 'amber' || sev === 'orange') ? '⚠️' : '⚠️';
+    const sev = w.severity;
+    const sevClass = sev === 'red' ? 'warning-red' :
+                     (sev === 'amber' || sev === 'orange') ? 'warning-amber' :
+                     'warning-yellow';
+    const icon = sev === 'red' ? '🛑' : '⚠️';
+
     const when = [
       w.onset ? new Date(w.onset).toLocaleString('en-GB', { timeZone:'Europe/London' }) : null,
       w.expires ? new Date(w.expires).toLocaleString('en-GB', { timeZone:'Europe/London' }) : null
     ].filter(Boolean);
 
+    const li = document.createElement('li');
+    li.className = `warning-item ${sevClass}`;
     li.innerHTML = `
       <div class="icon" aria-hidden="true">${icon}</div>
       <div class="meta">
@@ -452,14 +438,44 @@ class Slideshow{
   }
 }
 
+// Run a function now, then again at the top of every hour
+function scheduleHourly(fn){
+  // run immediately
+  fn();
+
+  // wait until the next :00, then run every hour
+  const now = new Date();
+  const msToNextHour =
+    (60 - now.getMinutes()) * 60_000
+    - now.getSeconds() * 1_000
+    - now.getMilliseconds();
+
+  setTimeout(() => {
+    fn(); // fire exactly at the next top-of-hour
+    setInterval(fn, 60 * 60 * 1000); // every hour thereafter
+  }, Math.max(0, msToNextHour));
+}
+
+
 document.addEventListener('DOMContentLoaded', async ()=>{
-  loadWeather();
+  scheduleHourly(async () => {
+    await loadWeather();
+    await loadWarnings(); // optional, but handy to keep warnings fresh
+  });
+
   loadContact();
-  loadWarnings();
-  const show = new Slideshow({ duration: 30000 }); // 30 seconds
+  const show = new Slideshow({ duration: 30000 });
   await show.init();
-  // Optional: keyboard controls if connected to a keyboard
+
   document.addEventListener('keydown', (e)=>{
     if (e.key === 'ArrowRight') show.next();
+  });
+
+  // Optional resilience: refresh when the tab becomes visible again
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.visibilityState === 'visible') {
+      loadWeather();
+      loadWarnings();
+    }
   });
 });
