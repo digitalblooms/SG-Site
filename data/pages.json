@@ -1,19 +1,39 @@
 {
   "pages": [
     {
-      "src": "assets/images/page-1.png",
-      "title": "Canva Page 1",
-      "alt": "Placeholder for Canva page 1"
+      "src": "assets/images/1.png",
+      "title": "Slide 1",
+      "alt": "Placeholder for Slide 1"
     },
     {
-      "src": "assets/images/page-2.png",
-      "title": "Canva Page 2",
-      "alt": "Placeholder for Canva page 2"
+      "src": "assets/images/2.png",
+      "title": "Slide 2",
+      "alt": "Placeholder for Slide 2"
     },
     {
-      "src": "assets/images/page-3.png",
-      "title": "Canva Page 3",
-      "alt": "Placeholder for Canva page 3"
+      "src": "assets/images/3.png",
+      "title": "Slide 3",
+      "alt": "Placeholder for Slide 3"
+    },
+    {
+      "src": "assets/images/4.png",
+      "title": "Slide 4",
+      "alt": "Placeholder for Slide 4"
+    },
+    {
+      "src": "assets/images/5.png",
+      "title": "Slide 5",
+      "alt": "Placeholder for Slide 5"
+    },
+    {
+      "src": "assets/images/6.png",
+      "title": "Slide 6",
+      "alt": "Placeholder for Slide 6"
+    },
+    {
+      "src": "assets/images/7.png",
+      "title": "Slide 7",
+      "alt": "Placeholder for Slide 7"
     }
   ]
 }

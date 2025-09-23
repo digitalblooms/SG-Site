@@ -48,12 +48,5 @@
   </div>
 
   <script src="app.js"></script>
-  <script>
-    // Set today's date in banner (Europe/London)
-    (function(){
-      const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday:'short', day:'2-digit', month:'short', year:'numeric' });
-      document.getElementById('today-label').textContent = fmt.format(new Date());
-    })();
-  </script>
 </body>
 </html>
