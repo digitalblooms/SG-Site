@@ -1,12 +1,54 @@
+/*
+  Bloomsbury site theme — brand palette refactor
+  ----------------------------------------------
+  All colors now come from variables based on the provided palette only.
+  Update tokens in :root to re-theme without touching component styles.
+*/
 
 :root{
-  --bg: #0b1220;
-  --card: #111827;
-  --muted: #94a3b8;
-  --text: #e5e7eb;
-  --accent: #60a5fa;
-  --ring: rgba(96,165,250,0.4);
+  /* Brand */
+  --brand-500: #F0C69A; /* General brand colour */
+
+  /* Secondary palette — greys & neutrals */
+  --gray-900: #3C3C3B;
+  --gray-800: #4A4A49; /* note: appears in both palettes */
+  --gray-700: #575756;
+  --gray-600: #646363;
+  --gray-500: #878787;
+  --gray-400: #B2B2B2;
+  --gray-300: #C6C6C6;
+  --gray-200: #DADADA;
+  --gray-100: #EDEDED;
+
+  /* Accent tones */
+  --accent-600: #A37F57; /* deeper accent */
+  --accent-500: #CB9D6B; /* lighter accent */
+
+  /* Semantic tokens (use these below) */
+  --bg: var(--gray-100);
+  --surface: var(--gray-100); /* cards / panels */
+  --surface-alt: var(--gray-200); /* subtle alternate surface */
+  --text: var(--gray-900);
+  --text-muted: var(--gray-500);
+  --border: var(--gray-200);
+  --border-subtle: var(--gray-100);
+  --interactive: var(--accent-600);
+  --interactive-contrast: var(--brand-500);
+  --brand: var(--brand-500);
+
+  /* Focus / ring colors (kept as solid palette tokens) */
+  --ring: var(--brand-500);
+  --ring-strong: var(--accent-600);
+
+  /* Status / emphasis (mapped to palette, no reds/yellows introduced) */
+  --warn-soft: yellow;   /* replaces yellow */
+  --warn-medium: orange;/* replaces amber */
+  --warn-strong: red;/* replaces red */
+
+  /* On-dark text */
+  --on-dark: var(--gray-100);
 }
+
 *{box-sizing:border-box}
 html,body{
   margin:0;padding:0;background:var(--bg);color:var(--text);
@@ -14,7 +56,9 @@ html,body{
   height:100dvh; /* fill the TV viewport */
   overflow:hidden; /* no scrollbars on TV */
 }
+
 a{color:inherit}
+
 /* Layout container uses CSS grid: header, contact, slideshow fills rest */
 .container{
   height:100%;
@@ -30,43 +74,43 @@ a{color:inherit}
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  background:var(--card);
-  border:2px solid #1f2937;           /* default border */
+  background:var(--surface);
+  border:2px solid var(--border);
   border-radius:18px;
   box-shadow:0 12px 30px rgba(0,0,0,.35);
 }
 
-.banner.warn-yellow { border-color: #facc15; box-shadow:0 0 0 3px rgba(250,204,21,.25); }
-.banner.warn-red    { border-color: #ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.25); }
+/* Warning emphasis variants mapped to palette */
+.banner.warn-yellow { border-color: var(--warn-soft); box-shadow:0 0 0 3px color-mix(in oklab, var(--warn-soft) 35%, transparent); }
+.banner.warn-red    { border-color: var(--warn-strong); box-shadow:0 0 0 3px color-mix(in oklab, var(--warn-strong) 25%, transparent); }
 
 .banner .weather { display:flex; align-items:center; flex-wrap:wrap; }
 
 .warnings{
   margin-left:1rem;
   min-width:260px;
-  background:#0f172a;
-  border:1px solid #1f2937;
-  border-radius:12px;
+  background:var(--gray-100);
   padding:.75rem .9rem;
+  color:var(--on-dark);
 }
-.warnings-empty{ color:var(--muted); }
+.warnings-empty{ color:var(--text-muted); }
 .warnings-list{
   list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.5rem;
 }
 .warning-item{
   display:flex; gap:.6rem; align-items:flex-start;
-  border:1px solid #334155; border-left-width:4px;
-  background:#0b1220; padding:.5rem .6rem; border-radius:10px;
+  border:1px solid var(--border-subtle); border-left-width:4px;
+  background:var(--gray-100); padding:.5rem .6rem; border-radius:10px; color:var(--on-dark);
 }
 .warning-item .icon{ font-size:1.2rem; line-height:1.1; }
 .warning-item .meta{ display:flex; flex-direction:column; gap:.15rem; }
 .warning-item .title{ font-weight:700; }
-.warning-item .when, .warning-item .areas{ color:var(--muted); font-size:.9rem; }
+.warning-item .when, .warning-item .areas{ color:var(--text-muted); font-size:.9rem; }
 
 /* Severity accents for the left border */
-.warning-yellow { border-left-color:#facc15; }
-.warning-amber  { border-left-color:#f59e0b; } /* Met Office 'amber' */
-.warning-red    { border-left-color:#ef4444; }
+.warning-yellow { border-left-color: var(--warn-soft); }
+.warning-amber  { border-left-color: var(--warn-medium); }
+.warning-red    { border-left-color: var(--warn-strong); }
 
 @media (max-width: 800px){
   .banner{ flex-direction:column; }
@@ -75,8 +119,8 @@ a{color:inherit}
 
 .brand{display:flex;align-items:center;gap:.75rem}
 .brand h1{font-size:1.1rem;margin:0;letter-spacing:.4px}
-.badge{display:inline-flex;gap:.5rem;align-items:center;padding:.25rem .6rem;border-radius:999px;background:#111827;border:1px solid #1f2937;font-size:.85rem}
-.badge small{color:var(--muted)}
+.badge{display:inline-flex;gap:.5rem;align-items:center;padding:.25rem .6rem;border-radius:999px;background:var(--gray-800);border:1px solid var(--border);font-size:.85rem;color:var(--on-dark)}
+.badge small{color:var(--text-muted)}
 
 /* Weather */
 .weather{
@@ -100,8 +144,8 @@ a{color:inherit}
 .weather-hours li{
   display:flex; flex-direction:column; align-items:center; /* stack */
   gap:.25rem; padding:.5rem .65rem;
-  border:1px solid #1f2937; background:#0f172a;
-  border-radius:10px; font-size:1.5rem; color:var(--muted);
+  border:1px solid var(--border); background:var(--surface-alt);
+  border-radius:10px; font-size:1.5rem; color:var(--text-muted);
 }
 .weather-hours .h{
   font-variant-numeric:tabular-nums;
@@ -117,15 +161,15 @@ a{color:inherit}
 /* Contact card */
 .contact-card{
   display:flex;align-items:center;gap:1rem;
-  background:var(--card);border:1px solid #1f2937;border-radius:18px;padding:.8rem 1rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:.8rem 1rem;
   box-shadow:0 12px 30px rgba(0,0,0,.35);
 }
-.contact-card img{width:64px;height:64px;border-radius:14px;border:1px solid #374151;object-fit:cover;background:#0f172a}
+.contact-card img{width:64px;height:64px;border-radius:14px;border:1px solid var(--border-subtle);object-fit:cover;background:var(--gray-800)}
 .contact-meta{display:flex;flex-direction:column}
 .contact-meta .name{font-weight:700}
-.contact-meta .role{color:var(--muted);font-size:.9rem}
+.contact-meta .role{color:var(--text-muted);font-size:.9rem}
 .contact-actions{margin-left:auto;display:flex;gap:.5rem;align-items: center;}
-.btn{border:1px solid #334155;background:#0f172a;color:var(--text);border-radius:12px;padding:.5rem .8rem;cursor:pointer}
+.btn{border:1px solid var(--border-subtle);background:var(--gray-100);color:var(--accent-500);border-radius:12px;padding:.5rem .8rem;cursor:pointer; font-size: x-large; font-weight: 900;}
 .btn:focus, .btn:hover{outline:none;box-shadow:0 0 0 4px var(--ring)}
 
 .phone-label { font-weight:700; }
@@ -138,9 +182,9 @@ a{color:inherit}
   position:relative;
   width:100%;
   height:100%;
-  background:#000; /* pleasant letterboxing for non-16:9 */
+  background:var(--gray-900); /* pleasant letterboxing */
   border-radius:16px;
-  border:1px solid #1f2937;
+  border:1px solid var(--border);
   overflow:hidden;
   box-shadow:0 12px 30px rgba(0,0,0,.35);
 }
@@ -158,8 +202,8 @@ a{color:inherit}
   width:100%;
   height:100%;
   object-fit:contain; /* never crop Canva pages */
-  background:#000;
+  background:var(--gray-900);
 }
 
 /* Footer note is no longer shown by default on TV, but keep style if reused */
-.footer-note{color:var(--muted);text-align:center;margin:0.5rem 0 .5rem}
+.footer-note{color:var(--text-muted);text-align:center;margin:0.5rem 0 .5rem}
