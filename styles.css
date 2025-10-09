@@ -46,7 +46,7 @@
   --warn-strong: red;/* replaces red */
 
   /* On-dark text */
-  --on-dark: var(--gray-100);
+  --on-dark: var(--gray-900);
 }
 
 *{box-sizing:border-box}
@@ -56,6 +56,56 @@ html,body{
   height:100dvh; /* fill the TV viewport */
   overflow:hidden; /* no scrollbars on TV */
 }
+
+@keyframes bgPulse {
+  0%, 100% { background-color: #ffffff; }   /* start/end at white */
+  50%      { background-color: var(--pulse-target); } /* peak tint */
+}
+
+/* Respect motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .theme-warn-yellow,
+  .theme-warn-amber,
+  .theme-warn-red,
+  .banner.warn-yellow,
+  .banner.warn-amber,
+  .banner.warn-red {
+    animation: none !important;
+  }
+}
+
+/* YELLOW / AMBER THEME */
+body.theme-warn-yellow {
+  --pulse-target: yellow;
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
+body.theme-warn-amber {
+  --pulse-target: orange;  
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
+body.theme-warn-red {
+  --pulse-target: red;
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
+/* Banner-only pulse (works with your current JS as-is) */
+.banner.warn-yellow {
+  --pulse-target: yellow;
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
+.banner.warn-amber {
+  --pulse-target: orange;
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
+.banner.warn-red {
+  --pulse-target: red;
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
 
 a{color:inherit}
 
@@ -74,22 +124,23 @@ a{color:inherit}
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  background:var(--surface);
+  /*background:var(--surface);*/
   border:2px solid var(--border);
   border-radius:18px;
   box-shadow:0 12px 30px rgba(0,0,0,.35);
 }
 
 /* Warning emphasis variants mapped to palette */
-.banner.warn-yellow { border-color: var(--warn-soft); box-shadow:0 0 0 3px color-mix(in oklab, var(--warn-soft) 35%, transparent); }
-.banner.warn-red    { border-color: var(--warn-strong); box-shadow:0 0 0 3px color-mix(in oklab, var(--warn-strong) 25%, transparent); }
+.banner.warn-yellow { border-color: var(--warn-soft); box-shadow:0 0 0 3px var(--warn-soft); }
+.banner.warn-amber { border-color: var(--warn-medium); box-shadow:0 0 0 3px var(--warn-medium); }
+.banner.warn-red    { border-color: var(--warn-strong); box-shadow:0 0 0 3px var(--warn-strong); }
 
 .banner .weather { display:flex; align-items:center; flex-wrap:wrap; }
 
 .warnings{
   margin-left:1rem;
-  min-width:260px;
-  background:var(--gray-100);
+  width:260px;
+  height: 1rem;
   padding:.75rem .9rem;
   color:var(--on-dark);
 }
@@ -99,8 +150,7 @@ a{color:inherit}
 }
 .warning-item{
   display:flex; gap:.6rem; align-items:flex-start;
-  border:1px solid var(--border-subtle); border-left-width:4px;
-  background:var(--gray-100); padding:.5rem .6rem; border-radius:10px; color:var(--on-dark);
+  padding:.5rem .6rem; border-radius:10px; color:var(--on-dark);
 }
 .warning-item .icon{ font-size:1.2rem; line-height:1.1; }
 .warning-item .meta{ display:flex; flex-direction:column; gap:.15rem; }
@@ -108,9 +158,9 @@ a{color:inherit}
 .warning-item .when, .warning-item .areas{ color:var(--text-muted); font-size:.9rem; }
 
 /* Severity accents for the left border */
-.warning-yellow { border-left-color: var(--warn-soft); }
-.warning-amber  { border-left-color: var(--warn-medium); }
-.warning-red    { border-left-color: var(--warn-strong); }
+.warning-yellow { border-color: var(--warn-soft); }
+.warning-amber  { border-color: var(--warn-medium); }
+.warning-red    { border-color: var(--warn-strong); }
 
 @media (max-width: 800px){
   .banner{ flex-direction:column; }

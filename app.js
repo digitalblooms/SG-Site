@@ -172,117 +172,147 @@ function weatherCodeToText(code){
 }
 
 async function loadWarnings(){
-  const banner = document.querySelector('.banner');
-  const listEl = document.getElementById('warnings-list');
+  const banner  = document.querySelector('.banner');
+  const listEl  = document.getElementById('warnings-list');
   const emptyEl = document.querySelector('.warnings-empty');
 
+  const CUSTOM_WARNINGS_URL = 'https://bloomsburydigital.app.n8n.cloud/webhook/9dd226df-261b-4d57-9781-629c56a0776c';
+
   const applyBorder = (maxSeverity) => {
-    banner.classList.remove('warn-yellow','warn-red');
-    if (!maxSeverity) return;
-    if (maxSeverity === 'red') banner.classList.add('warn-red');
-    else if (['amber','orange','yellow'].includes(maxSeverity)) banner.classList.add('warn-yellow');
+    banner.classList.remove('warn-yellow','warn-red', 'warn-amber');
+
+    // NEW: global theme hooks
+    document.body.classList.remove('theme-warn-yellow','theme-warn-red');
+
+    const s = (maxSeverity || '').toLowerCase();
+    if (s.includes('red')) {
+      banner.classList.add('warn-red');
+      document.body.classList.add('theme-warn-red');   // NEW
+    } else if (['yellow'].some(k => s.includes(k))) {
+      banner.classList.add('warn-yellow');
+      document.body.classList.add('theme-warn-yellow'); // NEW
+    } else if (['amber'].some(k => s.includes(k))) {
+      banner.classList.add('warn-amber');
+      document.body.classList.add('theme-warn-amber'); // NEW
+    }
   };
 
-  // --- Fetch Meteoalarm UK Atom feed ---
-  // Docs/listing of country feeds: feeds.meteoalarm.org (see citations)
-  const FEED_URL = 'https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-united-kingdom';
-
-  let xml;
-  try{
-    const res = await fetch(FEED_URL, { cache: 'no-store' }); // avoid stale entries on the TV
-    const txt = await res.text();
-    xml = new DOMParser().parseFromString(txt, 'application/xml');
-  }catch(e){
-    // Render "no warnings" fallback
-    if (listEl) listEl.hidden = true;
-    if (emptyEl) emptyEl.hidden = false;
-    applyBorder(null);
-    return;
-  }
-
-  // --- Parse Atom entries ---
-  const entries = Array.from(xml.querySelectorAll('entry, item')); // Atom(entry) or RSS(item)
-  const toLower = (s)=> (s||'').toLowerCase();
-
-  const parseSeverity = (title, summary, node) => {
-    // Try CAP extensions if present
-    const capColor = node.querySelector('cap\\:color, color');
-    const capSeverity = node.querySelector('cap\\:severity, severity');
-    const guess = toLower(
-      (capColor && capColor.textContent) ||
-      (capSeverity && capSeverity.textContent) ||
-      title || summary || ''
-    );
-    if (guess.includes('red')) return 'red';
-    if (guess.includes('amber') || guess.includes('orange')) return 'amber';
-    if (guess.includes('yellow')) return 'yellow';
-    return 'yellow'; // default style
+  const normaliseSeverity = (s) => {
+    const x = String(s || '').toLowerCase();
+    if (x.includes('red')) return 'red';
+    if (x.includes('amber') || x.includes('orange')) return 'amber';
+    if (x.includes('yellow')) return 'yellow';
+    return 'yellow';
   };
 
-  const warnings = entries.map(n => {
-    const title = (n.querySelector('title')?.textContent || '').trim();
-    const summary = (n.querySelector('summary, description')?.textContent || '').trim();
-    const updated = n.querySelector('updated, pubDate')?.textContent || '';
-    const dt = updated ? new Date(updated) : null;
+  const formatAreas = (areas) => {
+    if (!Array.isArray(areas)) return '';
+    return areas.map(a => {
+      const region = a?.regionName || a?.regionCode || '';
+      const subs = Array.isArray(a?.subRegions) && a.subRegions.length ? `: ${a.subRegions.join(', ')}` : '';
+      return `${region}${subs}`;
+    }).join(' • ');
+  };
 
-    // Some feeds carry CAP dates in <cap:effective> / <cap:onset> / <cap:expires>
-    const onset = n.querySelector('cap\\:effective, cap\\:onset, effective, onset')?.textContent || updated || '';
-    const expires = n.querySelector('cap\\:expires, expires')?.textContent || '';
+  const formatWhen = (w) => {
+    // Accept a variety of possible fields; your sample has none that are ISO times.
+    const start = w.starts || w.start || w.validFrom || w.from || null;
+    const end   = w.ends   || w.end   || w.validTo   || w.to   || null;
 
-    const severity = parseSeverity(title, summary, n);
-    return {
-      severity,
-      event: title || 'Weather warning',
-      onset: onset || null,
-      expires: expires || null,
-      areas: summary
+    const fmt = (v) => {
+      // If it looks like a date, try to format; otherwise return as-is
+      const d = typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v) ? new Date(v) : null;
+      return d && !isNaN(d) ? d.toLocaleString('en-GB', { timeZone:'Europe/London' }) : (typeof v === 'string' ? v : '');
     };
-  });
 
-  if (!warnings.length){
+    const parts = [start && fmt(start), end && fmt(end)].filter(Boolean);
+    return parts.length ? parts.join(' → ') : '';
+  };
+
+  const render = (warnings, envelopeMaxSeverity) => {
+    const items = Array.isArray(warnings) ? warnings : [];
+    if (!items.length) {
+      listEl.hidden = true;
+      emptyEl.hidden = false;
+      applyBorder(null);
+      return;
+    }
+
+    // Prefer server-provided maxSeverity, else compute
+    let max = (envelopeMaxSeverity ? normaliseSeverity(envelopeMaxSeverity) : null);
+    if (!max) {
+      const rank = { red:3, amber:2, yellow:1 };
+      max = items.reduce((acc, w) => {
+        const sev = normaliseSeverity(w?.severity);
+        return (rank[sev] || 0) > (rank[acc] || 0) ? sev : acc;
+      }, null);
+    }
+    applyBorder(max);
+
+    listEl.innerHTML = '';
+    items.slice(0,5).forEach(w => {
+      const sev = normaliseSeverity(w?.severity);
+      const sevClass = sev === 'red' ? 'warning-red' :
+                       (sev === 'amber') ? 'warning-amber' : 'warning-yellow';
+      const icon = sev === 'red' ? '🛑' : '⚠️';
+
+      const areasText = formatAreas(w?.areas);
+      const whenText  = formatWhen(w);
+
+      //old html that includes area:
+      //<div class="icon" aria-hidden="true">${icon}</div>
+      //<div class="meta">
+        //<div class="title">${w?.headline || w?.event || 'Weather warning'}</div>
+        //${whenText  ? `<div class="when">${whenText}</div>` : ``}
+        //${areasText ? `<div class="areas">${areasText}</div>` : ``}
+      //</div>
+
+      const li = document.createElement('li');
+      li.className = `warning-item ${sevClass}`;
+      li.innerHTML = `
+        <div class="icon" aria-hidden="true">${icon}</div>
+        <div class="meta">
+          <div class="title">${w?.headline || w?.event || 'Weather warning'}</div>
+        </div>
+      `;
+      listEl.appendChild(li);
+    });
+
+    emptyEl.hidden = true;
+    listEl.hidden = false;
+  };
+
+  try {
+    const res = await fetch(CUSTOM_WARNINGS_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const j = await res.json();
+
+    // Accept either [{...}] or {...}
+    let envelope = null;
+    if (Array.isArray(j)) {
+      // pick the most recently updated item
+      envelope = j.slice().sort((a,b) => new Date(b.updated||0) - new Date(a.updated||0))[0] || null;
+    } else if (j && typeof j === 'object') {
+      envelope = j;
+    }
+
+    const warnings = envelope?.warnings;
+    if (Array.isArray(warnings)) {
+      render(warnings, envelope?.maxSeverity);
+      return;
+    }
+
+    // If a totally different shape appears, show “none” gracefully
+    render([], null);
+  } catch (e) {
+    // On error, hide the list and clear the border
     listEl.hidden = true;
     emptyEl.hidden = false;
     applyBorder(null);
-    return;
+    // optional: console.error('loadWarnings failed', e);
   }
-
-  // --- Style banner by highest severity present ---
-  const rank = { red:3, amber:2, orange:2, yellow:1 };
-  const max = warnings.reduce((acc, w) =>
-    (rank[w.severity]||0) > (rank[acc]||0) ? w.severity : acc
-  , null);
-  applyBorder(max);
-
-  // --- Render up to 5 warnings ---
-  listEl.innerHTML = '';
-  warnings.slice(0,5).forEach(w => {
-    const sev = w.severity;
-    const sevClass = sev === 'red' ? 'warning-red' :
-                     (sev === 'amber' || sev === 'orange') ? 'warning-amber' :
-                     'warning-yellow';
-    const icon = sev === 'red' ? '🛑' : '⚠️';
-
-    const when = [
-      w.onset ? new Date(w.onset).toLocaleString('en-GB', { timeZone:'Europe/London' }) : null,
-      w.expires ? new Date(w.expires).toLocaleString('en-GB', { timeZone:'Europe/London' }) : null
-    ].filter(Boolean);
-
-    const li = document.createElement('li');
-    li.className = `warning-item ${sevClass}`;
-    li.innerHTML = `
-      <div class="icon" aria-hidden="true">${icon}</div>
-      <div class="meta">
-        <div class="title">${w.event}</div>
-        ${when.length ? `<div class="when">${when.join(' → ')}</div>` : ``}
-        ${w.areas ? `<div class="areas">${w.areas}</div>` : ``}
-      </div>
-    `;
-    listEl.appendChild(li);
-  });
-
-  emptyEl.hidden = true;
-  listEl.hidden = false;
 }
+
 
 function londonNow() {
   // Get a Date representing current time in Europe/London (DST-safe)
