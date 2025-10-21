@@ -144,13 +144,15 @@ a{color:inherit}
 .banner.has-warning .warnings { 
   flex: 1; 
   width: auto;
-  min-height: 7rem; 
+  min-height: 30rem;
+  font-size: xx-large;
 }
 
 .banner.has-warning .warnings-list {
   display: flex;
   flex-direction: row;
   gap: .75rem;
+  font-size: xx-large;
 }
 
 .warnings{
