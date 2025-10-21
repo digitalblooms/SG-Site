@@ -152,7 +152,7 @@ a{color:inherit}
   display: flex;
   flex-direction: row;
   gap: .75rem;
-  font-size: xx-large;
+  font-size: 50px;
 }
 
 .warnings{
