@@ -7,7 +7,7 @@
       "phone": "+44 7700 174021",
       "role": "Today's Designated Safeguarding Lead",
       "photo": "assets/images/peter.jpg",
-      "days": ["Mon", "Tue", "Wed", "Thu", "Fri"] 
+      "days": ["Mon", "Tue", "Wed", "Thu"] 
     },
     {
       "slug": "sam",
@@ -24,6 +24,14 @@
       "role": "Today's Designated Safeguarding Lead",
       "photo": "assets/images/nessa.jpg",
       "days": ["Sun"] 
+    },
+    {
+      "slug": "annabel",
+      "name": "Annabel Weber",
+      "phone": "+44 7700 174021",
+      "role": "Today's Designated Safeguarding Lead",
+      "photo": "assets/images/annabel.jpg",
+      "days": ["Fri"] 
     }
   ]
 }
