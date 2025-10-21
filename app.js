@@ -231,14 +231,20 @@ async function loadWarnings(){
 
   const render = (warnings, envelopeMaxSeverity) => {
     const items = Array.isArray(warnings) ? warnings : [];
+    const weatherWrap = document.getElementById('weather');
+
     if (!items.length) {
       listEl.hidden = true;
       emptyEl.hidden = false;
       applyBorder(null);
+
+      // 👇 REVEAL weather and exit takeover mode
+      banner.classList.remove('has-warning');
+      if (weatherWrap) weatherWrap.hidden = false;
       return;
     }
 
-    // Prefer server-provided maxSeverity, else compute
+    // …existing max severity logic…
     let max = (envelopeMaxSeverity ? normaliseSeverity(envelopeMaxSeverity) : null);
     if (!max) {
       const rank = { red:3, amber:2, yellow:1 };
@@ -249,23 +255,16 @@ async function loadWarnings(){
     }
     applyBorder(max);
 
+    // 👇 ENTER takeover mode: hide weather, stretch warnings
+    banner.classList.add('has-warning');
+    if (weatherWrap) weatherWrap.hidden = true;
+
     listEl.innerHTML = '';
     items.slice(0,5).forEach(w => {
       const sev = normaliseSeverity(w?.severity);
       const sevClass = sev === 'red' ? 'warning-red' :
-                       (sev === 'amber') ? 'warning-amber' : 'warning-yellow';
+                      (sev === 'amber') ? 'warning-amber' : 'warning-yellow';
       const icon = sev === 'red' ? '🛑' : '⚠️';
-
-      const areasText = formatAreas(w?.areas);
-      const whenText  = formatWhen(w);
-
-      //old html that includes area:
-      //<div class="icon" aria-hidden="true">${icon}</div>
-      //<div class="meta">
-        //<div class="title">${w?.headline || w?.event || 'Weather warning'}</div>
-        //${whenText  ? `<div class="when">${whenText}</div>` : ``}
-        //${areasText ? `<div class="areas">${areasText}</div>` : ``}
-      //</div>
 
       const li = document.createElement('li');
       li.className = `warning-item ${sevClass}`;
@@ -304,12 +303,16 @@ async function loadWarnings(){
 
     // If a totally different shape appears, show “none” gracefully
     render([], null);
-  } catch (e) {
+  }  catch (e) {
     // On error, hide the list and clear the border
     listEl.hidden = true;
     emptyEl.hidden = false;
     applyBorder(null);
-    // optional: console.error('loadWarnings failed', e);
+
+    // 👇 EXIT takeover mode on error as well
+    banner.classList.remove('has-warning');
+    const weatherWrap = document.getElementById('weather');
+    if (weatherWrap) weatherWrap.hidden = false;
   }
 }
 

@@ -137,6 +137,22 @@ a{color:inherit}
 
 .banner .weather { display:flex; align-items:center; flex-wrap:wrap; }
 
+.banner.has-warning .weather { 
+  display: none !important; 
+}
+
+.banner.has-warning .warnings { 
+  flex: 1; 
+  width: auto;
+  min-height: 7rem; 
+}
+
+.banner.has-warning .warnings-list {
+  display: flex;
+  flex-direction: row;
+  gap: .75rem;
+}
+
 .warnings{
   margin-left:1rem;
   width:260px;
