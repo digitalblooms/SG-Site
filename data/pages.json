@@ -39,6 +39,11 @@
       "src": "assets/images/8.png",
       "title": "Slide 8",
       "alt": "Placeholder for Slide 8"
+    },
+    {
+      "src": "assets/images/9.png",
+      "title": "Slide 9",
+      "alt": "Placeholder for Slide 9"
     }
   ]
 }
