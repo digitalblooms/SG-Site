@@ -2,26 +2,6 @@ let weatherAbortCtrl = null;
 let weatherSeq = 0;
 let weatherRunId = 0;
 
-// Time in Europe/London for deterministic 'day' logic
-function todayInLondonISO(){
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year:'numeric', month:'2-digit', day:'2-digit'});
-  const parts = fmt.formatToParts(new Date());
-  const y = parts.find(p=>p.type==='year').value;
-  const m = parts.find(p=>p.type==='month').value;
-  const d = parts.find(p=>p.type==='day').value;
-  return `${y}-${m}-${d}`;
-}
-function dayOfYearLondon(){
-  const now = new Date();
-  const tz = 'Europe/London';
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit'});
-  const [y,m,d] = fmt.format(now).split('-').map(Number);
-  const today = new Date(Date.UTC(y, m-1, d));
-  const jan1 = new Date(Date.UTC(y, 0, 1));
-  const diff = (today - jan1) / 86400000;
-  return Math.floor(diff) + 1;
-}
-
 // Weather widget using Open-Meteo (no API key)
 // Format "HH:00" label for Europe/London local time
 function formatHourLondon(iso) {
@@ -316,111 +296,6 @@ async function loadWarnings(){
   }
 }
 
-
-function londonNow() {
-  // Get a Date representing current time in Europe/London (DST-safe)
-  const now = new Date();
-  // Build a YYYY-MM-DDTHH:mm:ss string in London using Intl then parse back
-  const fmt = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/London',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false
-  });
-  const parts = Object.fromEntries(fmt.formatToParts(now).map(p => [p.type, p.value]));
-  const isoLocal = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
-  return new Date(isoLocal);
-}
-
-function todayInLondonISO() {
-  const d = londonNow();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-// Optional: ISO week number for nice weekly rotation among multiple candidates
-function isoWeekNumber(date) {
-  // date: Date in London
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  // Thursday in current week decides the year
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return weekNo;
-}
-
-function weekdayCodeLondon(){
-  const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short' });
-  return fmt.format(new Date()).slice(0,3); // e.g., "Mon"
-}
-
-// ISO week number (for fair weekly rotation among multiple candidates)
-function isoWeekNumberLondon(){
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year:'numeric', month:'2-digit', day:'2-digit' });
-  const [y,m,d] = fmt.format(new Date()).split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m-1, d));
-  dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
-  return Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
-}
-
-// Contact-of-the-day
-async function loadContact(){
-  const dateISO = todayInLondonISO();
-  const dow = weekdayCodeLondon();
-
-  // Avoid stale cache while you’re testing JSON edits
-  const res = await fetch('data/contacts.json', { cache: 'no-store' });
-  const data = await res.json();
-
-  const nameEl  = document.querySelector('#contact-name');
-  const roleEl  = document.querySelector('#contact-role');
-  const phoneEl = document.querySelector('#contact-phone');
-  const imgEl   = document.querySelector('#contact-photo');
-
-  const roster = Array.isArray(data.roster) ? data.roster : [];
-  if (!roster.length) return;
-
-  let chosen = null;
-
-  // 1) Exact-date override if present: assignments: { "YYYY-MM-DD": "slug" }
-  if (data.assignments && data.assignments[dateISO]){
-    const slug = data.assignments[dateISO];
-    chosen = roster.find(r => r.slug === slug) || null;
-  }
-
-  // 2) Day-of-week routing (e.g., "Mon","Wed") — your JSON already has this
-  if (!chosen){
-    const candidates = roster.filter(c =>
-      Array.isArray(c.days) && c.days.some(d => d.toLowerCase() === dow.toLowerCase())
-    );
-    if (candidates.length){
-      // Rotate weekly among the candidates for that weekday
-      const week = isoWeekNumberLondon();
-      chosen = candidates[week % candidates.length];
-    }
-  }
-
-  // 3) Fallback to deterministic rotation if nothing matched
-  if (!chosen){
-    const doy = dayOfYearLondon();
-    chosen = roster[doy % roster.length];
-  }
-
-  // --- Render ---
-  nameEl.textContent = chosen.name;
-  roleEl.textContent = chosen.role || 'Contact';
-  imgEl.src = chosen.photo;
-  imgEl.alt = `Headshot of ${chosen.name}`;
-
-  const tel = (chosen.phone || '').replace(/\s+/g,'');
-  phoneEl.href = tel ? `tel:${tel}` : '#';
-  phoneEl.textContent = chosen.phone || '';
-  phoneEl.setAttribute('aria-label', `Call DSL Hotline ${chosen.phone || ''}`);
-}
-
 // Slideshow (full-height area below headers) with 30s interval
 class Slideshow{
   constructor({duration=30000}={}){
@@ -522,7 +397,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     await loadWarnings(); // optional, but handy to keep warnings fresh
   });
 
-  loadContact();
   const show = new Slideshow({ duration: 30000 });
   await show.init();
 

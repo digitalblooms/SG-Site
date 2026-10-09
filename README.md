@@ -4,7 +4,7 @@
 A tiny, no-build static site that:
 - Shows your Canva pages (exported as images) in a neat grid with a lightbox.
 - Displays a banner with a live weather widget (Open-Meteo, no API key).
-- Shows a rotating "Contact of the Day" (automatic rotation or explicit date assignments).
+- Shows a fixed safeguarding contact card (Head of Safeguarding + DSL Hotline).
 - Works on GitHub Pages (pure HTML/CSS/JS).
 
 ## How to use
@@ -20,21 +20,7 @@ A tiny, no-build static site that:
 }
 ```
 
-3) Update the duty roster in `data/contacts.json`:
-
-- **Rotation mode:** The site chooses a contact by *day-of-year* mod roster length.
-- **Date assignment mode:** Add an entry under `assignments` with `YYYY-MM-DD` to force a specific person.
-
-```json
-{
-  "assignments": {
-    "2025-12-24": "alex"
-  },
-  "roster": [
-    { "slug": "alex", "name": "Alex Lane", "phone": "+44 7700 900001", "photo": "assets/images/alex.svg" }
-  ]
-}
-```
+3) To change the safeguarding contact (name, role, photo or DSL Hotline number), edit the `contact-card` section in `index.html`.
 
 4) Optional: Change the default location for the weather
 - The widget tries to use the browser's location (HTTPS required; GitHub Pages is fine).  
