@@ -24,11 +24,22 @@
       </div>
     </section>
 
+    <!--
+      The markup below is the FALLBACK, not a placeholder: Peter and the
+      hotline are what shows before app.js runs, and what it puts back if the
+      coach app can't be reached or nobody is on the DSL rota today. Never
+      blank it out — a safeguarding screen showing no contact is worse than
+      one showing the general escalation route.
+
+      app.js swaps only the face, the name and the role, from the DSL rota
+      Pete keeps in the coach app (Safeguarding → DSL rota). The number is
+      deliberately fixed: it is the hotline, not the on-duty person's mobile.
+    -->
     <section class="contact-card" id="contact-card" aria-label="Safeguarding contact">
-      <img src="assets/images/peter.jpg" alt="Headshot of Peter Marment" width="64" height="64" loading="eager">
+      <img id="contact-photo" src="assets/images/peter.jpg" alt="Headshot of Peter Marment" width="64" height="64" loading="eager">
       <div class="contact-meta">
-        <span class="name">Peter Marment</span>
-        <span class="role">Head of Safeguarding</span>
+        <span class="name" id="contact-name">Peter Marment</span>
+        <span class="role" id="contact-role">Head of Safeguarding</span>
       </div>
       <div class="contact-actions">
         <span class="phone-label">DSL Hotline:</span>

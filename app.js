@@ -391,11 +391,125 @@ function scheduleHourly(fn){
 }
 
 
+// ---------------------------------------------------------------------------
+// Today's DSL — name and face from the coach app's rota
+//
+// `/api/dsl` (api/dsl.mjs) asks the coach app who is Designated Safeguarding
+// Lead today and whether they have a BambooHR photo. Pete keeps that rota in
+// the admin portal under Safeguarding → DSL rota; nothing is entered twice.
+//
+// The phone number is NOT touched. It is the DSL hotline, the same number
+// whoever is on duty, and it stays in the HTML.
+//
+// FALLING BACK IS THE NORMAL PATH, not an error path. No rota entry for
+// today, no photo, a failed call, a slow network — each of them puts the card
+// back to Peter Marment, Head of Safeguarding, which is always a correct
+// escalation route. The card is never emptied and never shows a spinner.
+// ---------------------------------------------------------------------------
+
+// Read out of the HTML once, before anything can overwrite it.
+const DSL_FALLBACK = (() => {
+  const photo = document.getElementById('contact-photo');
+  const name = document.getElementById('contact-name');
+  const role = document.getElementById('contact-role');
+  return {
+    src: photo?.getAttribute('src') ?? '',
+    alt: photo?.getAttribute('alt') ?? '',
+    name: name?.textContent ?? '',
+    role: role?.textContent ?? '',
+  };
+})();
+
+let dslShowing = null; // what the card currently says, so we only touch the DOM on a change
+
+function paintDsl(next) {
+  const key = `${next.name}|${next.role}|${next.src}`;
+  if (key === dslShowing) return;
+
+  const photoEl = document.getElementById('contact-photo');
+  const nameEl = document.getElementById('contact-name');
+  const roleEl = document.getElementById('contact-role');
+  if (!photoEl || !nameEl || !roleEl) return;
+
+  nameEl.textContent = next.name;
+  roleEl.textContent = next.role;
+  photoEl.alt = next.alt;
+
+  // Swap the face only once it has actually loaded, so a missing or slow
+  // photo leaves the previous one up rather than flashing a broken image.
+  if (next.src && next.src !== photoEl.getAttribute('src')) {
+    const probe = new Image();
+    probe.onload = () => { photoEl.src = next.src; };
+    probe.onerror = () => { photoEl.src = DSL_FALLBACK.src; photoEl.alt = DSL_FALLBACK.alt; };
+    probe.src = next.src;
+  }
+
+  dslShowing = key;
+}
+
+function showDslFallback() {
+  paintDsl({ ...DSL_FALLBACK });
+}
+
+async function loadDsl() {
+  let data;
+  try {
+    const res = await fetch('/api/dsl', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch {
+    showDslFallback();
+    return;
+  }
+
+  // `name` null means nobody is on the rota today. A real state, not a fault.
+  if (!data || typeof data.name !== 'string' || !data.name.trim()) {
+    showDslFallback();
+    return;
+  }
+
+  const name = data.name.trim();
+  paintDsl({
+    name,
+    role: 'Designated Safeguarding Lead — on duty today',
+    // No photo on their BambooHR record: keep the fallback face rather than
+    // an empty frame, but show their name, which is the part that matters.
+    src: typeof data.photo === 'string' && data.photo ? data.photo : DSL_FALLBACK.src,
+    alt: typeof data.photo === 'string' && data.photo ? `Headshot of ${name}` : DSL_FALLBACK.alt,
+  });
+}
+
+/**
+ * Run `fn` every 15 minutes, and again just after midnight London — the
+ * moment `api.dsl_today` starts pointing at a different person. These screens
+ * stay on for weeks, so the handover has to happen without anyone touching
+ * them.
+ */
+function scheduleDsl(fn) {
+  fn();
+  setInterval(fn, 15 * 60 * 1000);
+
+  const atMidnight = () => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date());
+    const get = (t) => Number(parts.find((p) => p.type === t)?.value ?? 0);
+    const sinceMidnight = (get('hour') * 3600 + get('minute') * 60 + get('second')) * 1000;
+    // A minute past, so the database has certainly rolled over too.
+    const msToMidnight = 24 * 60 * 60 * 1000 - sinceMidnight + 60 * 1000;
+    setTimeout(() => { fn(); atMidnight(); }, msToMidnight);
+  };
+  atMidnight();
+}
+
+
 document.addEventListener('DOMContentLoaded', async ()=>{
   scheduleHourly(async () => {
     await loadWeather();
     await loadWarnings(); // optional, but handy to keep warnings fresh
   });
+
+  scheduleDsl(loadDsl);
 
   const show = new Slideshow({ duration: 30000 });
   await show.init();
@@ -409,6 +523,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if (document.visibilityState === 'visible') {
       loadWeather();
       loadWarnings();
+      loadDsl();
     }
   });
 });
