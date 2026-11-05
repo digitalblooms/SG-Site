@@ -30,16 +30,24 @@ A tiny, no-build static site that:
 
 ## Deploy (Vercel)
 
-The site is hosted on Vercel, connected to this GitHub repo. Any push to `main`
-deploys to production automatically — there is nothing to build or run.
+The site is hosted on Vercel. **The GitHub repo is not connected to the Vercel
+project**, so pushing to `main` deploys nothing — every release is a CLI deploy
+from this folder:
+
+```sh
+vercel --prod
+```
+
+(Checked 2026-11-05: the project had one deployment ever, and two pushed commits
+had never been built. If you connect the repo under Vercel → sg-site → Settings
+→ Git, pushes will deploy on their own and this note can go.)
 
 - Production: see the project in the Vercel dashboard (Bloomsbury Football team).
-- Pull requests get their own preview URL.
 - `vercel.json` pins it as a static site served from the repo root and keeps
   `data/pages.json` uncached so slide changes appear without a hard refresh.
 
 To update the slideshow: drop new images in `assets/images/`, edit
-`data/pages.json`, commit and push.
+`data/pages.json`, commit, push, then `vercel --prod`.
 
 ## Today's DSL
 
